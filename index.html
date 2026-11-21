@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es" manifest="panel.appcache">
+<head>
+<meta charset="utf-8">
+<title>Panel de casa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Casa">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+* { box-sizing: border-box; -webkit-box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #f4f1ea; color: #23262b;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-text-size-adjust: 100%;
+  -webkit-transition: background 1s, color 1s; transition: background 1s, color 1s;
+}
+input { -webkit-user-select: text; user-select: text; }
+
+.app { display: -webkit-flex; display: flex; height: 100%; padding: 18px; }
+.col { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+.izq { -webkit-flex: 1.15; flex: 1.15; padding-right: 18px; }
+.der { -webkit-flex: 1; flex: 1; }
+
+.tarjeta { background: #ffffff; border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
+.tarjeta:last-child { margin-bottom: 0; }
+.estirar { -webkit-flex: 1; flex: 1; min-height: 0; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+
+/* Reloj */
+.reloj { text-align: center; padding: 8px 0 12px; }
+#hora { font-size: 112px; font-weight: 200; line-height: 1; letter-spacing: -4px; }
+#seg { font-size: 34px; font-weight: 300; color: #9a8f80; letter-spacing: 0; margin-left: 6px; }
+#fecha { font-size: 26px; font-weight: 300; margin-top: 4px; }
+#fecha:first-letter { text-transform: uppercase; }
+
+/* Clima */
+.clima-ahora { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+#c-icono { font-size: 54px; line-height: 1; margin-right: 14px; }
+#c-temp { font-size: 54px; font-weight: 200; line-height: 1; }
+.c-texto { margin-left: 16px; }
+#c-desc { font-size: 22px; }
+#c-extra { font-size: 15px; color: #8a8174; margin-top: 4px; }
+.dias { display: -webkit-flex; display: flex; margin-top: 10px; border-top: 1px solid #ece6db; padding-top: 8px; }
+.dia { -webkit-flex: 1; flex: 1; text-align: center; }
+.dia-n { font-size: 15px; color: #8a8174; }
+.dia-i { font-size: 24px; margin: 2px 0; }
+.dia-t { font-size: 16px; }
+.dia-t span { color: #a39a8d; }
+.dia-p { font-size: 13px; color: #4f7cac; margin-top: 2px; }
+.pie { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: 12px; }
+#c-estado { -webkit-flex: 1; flex: 1; font-size: 12px; color: #a39a8d; text-align: right; }
+
+/* Calendario */
+.cal-cab { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-bottom: 8px; }
+#cal-titulo { -webkit-flex: 1; flex: 1; text-align: center; font-size: 22px; font-weight: 500; }
+.btn { background: #f0ebe2; border: 0; border-radius: 10px; font-size: 20px; padding: 6px 14px; color: inherit; font-family: inherit; }
+table { width: 100%; border-collapse: collapse; }
+th { font-size: 13px; color: #a39a8d; font-weight: 500; padding: 4px 0; }
+td { text-align: center; font-size: 18px; height: 38px; vertical-align: top; padding-top: 2px; }
+td i { display: block; width: 6px; height: 6px; border-radius: 3px; background: #4f7cac; margin: 1px auto 0; }
+td.elegido span { display: inline-block; width: 32px; height: 32px; line-height: 28px; border-radius: 16px; border: 2px solid #c8553d; }
+td.fuera { color: #d2cabd; }
+td.domingo { color: #c8553d; }
+td.hoy span { display: inline-block; width: 32px; height: 32px; line-height: 32px; border-radius: 16px; background: #c8553d; color: #fff; font-weight: 600; }
+
+/* Pendientes */
+.pen-cab { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-bottom: 10px; }
+.pen-cab h2 { -webkit-flex: 1; flex: 1; font-size: 22px; font-weight: 500; }
+#pen-limpiar { font-size: 14px; padding: 6px 10px; }
+form { display: -webkit-flex; display: flex; margin-bottom: 10px; }
+#pen-texto { -webkit-flex: 1; flex: 1; font-size: 18px; padding: 10px 12px; border: 1px solid #e3dccf; border-radius: 10px; background: #faf8f4; color: inherit; font-family: inherit; -webkit-appearance: none; }
+#pen-agregar { margin-left: 8px; font-size: 18px; background: #c8553d; color: #fff; }
+#pen-lista { list-style: none; -webkit-flex: 1; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#pen-lista li { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 10px 2px; border-bottom: 1px solid #f0ebe2; font-size: 19px; }
+.marca { width: 26px; height: 26px; border-radius: 13px; border: 2px solid #c9bfb0; margin-right: 12px; text-align: center; line-height: 22px; font-size: 16px; color: #fff; -webkit-flex-shrink: 0; flex-shrink: 0; }
+li.hecho .marca { background: #7a9e7e; border-color: #7a9e7e; }
+li.hecho .pt { text-decoration: line-through; color: #b3aa9c; }
+.pt { -webkit-flex: 1; flex: 1; word-wrap: break-word; }
+.borrar { font-size: 22px; color: #c9bfb0; padding: 0 6px 0 14px; }
+#pen-lista li.sub { padding-left: 30px; }
+.pt em { font-style: normal; font-size: 13px; color: #4f7cac; margin-left: 8px; white-space: nowrap; }
+.pt em.tarde { color: #c8553d; }
+#pen-estado { font-size: 12px; color: #a39a8d; text-align: right; margin-top: 4px; min-height: 14px; }
+.ev { cursor: pointer; }
+#detalle { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(20,18,15,0.45);
+  display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center; z-index: 10; }
+#detalle.oculto { display: none; }
+.caja { background: #fff; border-radius: 18px; padding: 24px 26px; width: 560px; max-width: 90%; max-height: 80%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.d-cab { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+#d-color { width: 16px; height: 16px; border-radius: 8px; margin-right: 12px; -webkit-flex-shrink: 0; flex-shrink: 0; }
+#d-titulo { font-size: 26px; font-weight: 500; }
+#d-cuando { font-size: 18px; margin-top: 10px; }
+#d-cal, #d-lugar { font-size: 16px; color: #8a8174; margin-top: 6px; }
+#d-desc { font-size: 16px; margin-top: 14px; white-space: pre-wrap; word-wrap: break-word; color: #4a4540; }
+#d-desc:empty, #d-cal:empty, #d-lugar:empty { display: none; }
+#d-cerrar { margin-top: 18px; width: 100%; font-size: 18px; }
+#pen-vacio { color: #b3aa9c; font-size: 16px; text-align: center; padding: 18px 0; }
+
+/* Botón de modo noche */
+#modo, .chico { font-size: 14px; padding: 6px 12px; }
+#ag-lista { -webkit-flex: 1; flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.ag-dia { font-size: 13px; font-weight: 600; color: #a39a8d; text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 2px; }
+.ag-dia:first-child { margin-top: 0; }
+.ev { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 5px 0; font-size: 18px; }
+.ev i { width: 10px; height: 10px; border-radius: 5px; margin-right: 10px; -webkit-flex-shrink: 0; flex-shrink: 0; }
+.ev b { font-weight: 500; width: 108px; -webkit-flex-shrink: 0; flex-shrink: 0; font-size: 16px; color: #6f665a; }
+.ev span { -webkit-flex: 1; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ag-vacio { color: #b3aa9c; font-size: 16px; padding: 10px 0; }
+#ag-estado { font-size: 12px; color: #a39a8d; text-align: right; margin-top: 4px; }
+
+/* ---------- Modo noche ---------- */
+body.noche { background: #000; color: #8c6f5c; }
+body.noche .tarjeta { background: #0b0b0b; }
+body.noche #seg, body.noche #c-extra, body.noche .dia-n, body.noche th, body.noche #c-estado { color: #5a4a3f; }
+body.noche .dias, body.noche #pen-lista li { border-color: #1a1a1a; }
+body.noche .btn { background: #161616; }
+body.noche td.fuera { color: #2e2620; }
+body.noche td.domingo { color: #8a4433; }
+body.noche td.hoy span { background: #5e2c20; color: #c8a48e; }
+body.noche #pen-texto { background: #111; border-color: #222; }
+body.noche #pen-agregar { background: #5e2c20; color: #c8a48e; }
+body.noche .dia-p { color: #3f5670; }
+body.noche .ev b, body.noche .ag-dia, body.noche #ag-estado { color: #5a4a3f; }
+body.noche .ev i, body.noche td i { opacity: 0.45; }
+body.noche td.elegido span { border-color: #5e2c20; }
+body.noche .caja { background: #111; }
+body.noche #d-cal, body.noche #d-lugar, body.noche #pen-estado { color: #5a4a3f; }
+body.noche #d-desc { color: #7a6252; }
+body.noche .pt em { color: #3f5670; }
+body.noche .pt em.tarde { color: #8a4433; }
+body.noche #c-icono, body.noche .dia-i { opacity: 0.45; }
+body.noche li.hecho .marca { background: #3c4f3e; border-color: #3c4f3e; }
+body.noche .marca, body.noche .borrar { border-color: #3a3029; color: #3a3029; }
+body.noche li.hecho .marca { color: #000; }
+
+/* Vertical (iPad parado) */
+@media (orientation: portrait) {
+  .app { -webkit-flex-direction: column; flex-direction: column; }
+  .izq { padding-right: 0; -webkit-flex: none; flex: none; }
+  .der { min-height: 0; }
+  #hora { font-size: 130px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="col izq">
+    <div class="tarjeta reloj">
+      <div><span id="hora">--:--</span><span id="seg">--</span></div>
+      <div id="fecha">&nbsp;</div>
+    </div>
+    <div class="tarjeta estirar">
+      <div class="pen-cab">
+        <h2 id="ag-titulo">Agenda</h2>
+        <button class="btn chico" id="ag-google">⚙ Google</button>
+      </div>
+      <div id="ag-lista"></div>
+      <div id="ag-estado"></div>
+    </div>
+    <div class="tarjeta" id="clima">
+      <div class="clima-ahora">
+        <div id="c-icono">…</div>
+        <div id="c-temp">--°</div>
+        <div class="c-texto">
+          <div id="c-desc">Cargando clima…</div>
+          <div id="c-extra">Cochabamba</div>
+        </div>
+      </div>
+      <div class="dias" id="c-dias"></div>
+      <div class="pie"><button class="btn" id="modo">Modo: auto</button><div id="c-estado"></div></div>
+    </div>
+  </div>
+  <div class="col der">
+    <div class="tarjeta">
+      <div class="cal-cab">
+        <button class="btn" id="cal-ant">‹</button>
+        <div id="cal-titulo"></div>
+        <button class="btn" id="cal-sig">›</button>
+      </div>
+      <table id="cal"></table>
+    </div>
+    <div class="tarjeta estirar">
+      <div class="pen-cab">
+        <h2 id="pen-titulo">Pendientes</h2>
+        <button class="btn" id="pen-limpiar">Quitar hechos</button>
+      </div>
+      <form id="pen-form">
+        <input type="text" id="pen-texto" placeholder="Agregar pendiente…" autocomplete="off" maxlength="120">
+        <button class="btn" id="pen-agregar" type="submit">+</button>
+      </form>
+      <ul id="pen-lista"></ul>
+      <div id="pen-estado"></div>
+    </div>
+  </div>
+</div>
+<div id="detalle" class="oculto">
+  <div class="caja">
+    <div class="d-cab"><i id="d-color"></i><div id="d-titulo"></div></div>
+    <div id="d-cuando"></div>
+    <div id="d-cal"></div>
+    <div id="d-lugar"></div>
+    <div id="d-desc"></div>
+    <button class="btn" id="d-cerrar">Cerrar</button>
+  </div>
+</div>
+<script>
+/* Escrito en JavaScript antiguo (ES5) a propósito: Safari de iOS 9 no entiende el moderno. */
+(function () {
+  'use strict';
+
+  // ---------- Ajustes ----------
+  var LAT = -17.3895, LON = -66.1568;      // Cochabamba
+  var NOCHE_DESDE = 21, NOCHE_HASTA = 6;   // horas del modo noche automático
+  var CLIMA_CADA_MIN = 30;
+
+  var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  var DIAS_C = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+               'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  function $(id) { return document.getElementById(id); }
+  function dos(n) { return n < 10 ? '0' + n : '' + n; }
+  function texto(el, t) { if (el.textContent !== t) { el.textContent = t; } }
+
+  var guardar = {
+    leer: function (k, def) {
+      try { var v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
+      catch (e) { return def; }
+    },
+    poner: function (k, v) {
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+    }
+  };
+
+  // ---------- Reloj y fecha ----------
+  var ultimoDia = -1, ultimaHora = -1, ultimoMin = -1;
+  function tic() {
+    var a = new Date();
+    texto($('hora'), dos(a.getHours()) + ':' + dos(a.getMinutes()));
+    texto($('seg'), dos(a.getSeconds()));
+    if (a.getDate() !== ultimoDia) {
+      ultimoDia = a.getDate();
+      texto($('fecha'), DIAS[a.getDay()] + ', ' + a.getDate() + ' de ' + MESES[a.getMonth()] + ' de ' + a.getFullYear());
+      calMes = a.getMonth(); calAnio = a.getFullYear();
+      dibujarCalendario();
+    }
+    if (a.getHours() !== ultimaHora) { ultimaHora = a.getHours(); aplicarModo(); }
+    if (a.getMinutes() !== ultimoMin) { ultimoMin = a.getMinutes(); dibujarAgenda(); }
+    setTimeout(tic, 1000 - a.getMilliseconds() + 5);
+  }
+
+  // ---------- Modo noche ----------
+  var MODOS = ['auto', 'día', 'noche'];
+  var modo = guardar.leer('modo', 'auto');
+  function aplicarModo() {
+    var h = new Date().getHours();
+    var noche = modo === 'noche' || (modo === 'auto' && (h >= NOCHE_DESDE || h < NOCHE_HASTA));
+    document.body.className = noche ? 'noche' : '';
+    texto($('modo'), 'Modo: ' + modo);
+  }
+  $('modo').addEventListener('click', function () {
+    modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
+    guardar.poner('modo', modo);
+    aplicarModo();
+  });
+
+  // ---------- Calendario ----------
+  var calMes = new Date().getMonth(), calAnio = new Date().getFullYear(), calTimer = null;
+  function dibujarCalendario() {
+    var hoy = new Date();
+    texto($('cal-titulo'), MESES[calMes].charAt(0).toUpperCase() + MESES[calMes].slice(1) + ' ' + calAnio);
+    var primero = new Date(calAnio, calMes, 1);
+    var inicio = (primero.getDay() + 6) % 7;              // semana empieza en lunes
+    var diasMes = new Date(calAnio, calMes + 1, 0).getDate();
+    var diasAnt = new Date(calAnio, calMes, 0).getDate();
+    var html = '<tr>';
+    var orden = [1, 2, 3, 4, 5, 6, 0], i;
+    for (i = 0; i < 7; i++) { html += '<th>' + DIAS_C[orden[i]] + '</th>'; }
+    html += '</tr>';
+    var celdas = Math.ceil((inicio + diasMes) / 7) * 7;
+    for (i = 0; i < celdas; i++) {
+      if (i % 7 === 0) { html += '<tr>'; }
+      var n = i - inicio + 1, clase = [];
+      if (n < 1) { n = diasAnt + n; clase.push('fuera'); }
+      else if (n > diasMes) { n = n - diasMes; clase.push('fuera'); }
+      var extra = '', fechaTd = '';
+      if (clase.length === 0) {
+        fechaTd = calAnio + '-' + dos(calMes + 1) + '-' + dos(n);
+        if (i % 7 === 6) { clase.push('domingo'); }
+        if (n === hoy.getDate() && calMes === hoy.getMonth() && calAnio === hoy.getFullYear()) { clase.push('hoy'); }
+        else if (fechaTd === diaElegido) { clase.push('elegido'); }
+        if (eventosDe(fechaTd).length) { extra = '<i></i>'; }
+      }
+      html += '<td class="' + clase.join(' ') + '" data-d="' + fechaTd + '"><span>' + n + '</span>' + extra + '</td>';
+      if (i % 7 === 6) { html += '</tr>'; }
+    }
+    $('cal').innerHTML = html;
+  }
+  function moverMes(d) {
+    calMes += d;
+    if (calMes < 0) { calMes = 11; calAnio--; }
+    if (calMes > 11) { calMes = 0; calAnio++; }
+    dibujarCalendario();
+    clearTimeout(calTimer);
+    calTimer = setTimeout(function () {             // vuelve solo al mes actual
+      var a = new Date(); calMes = a.getMonth(); calAnio = a.getFullYear(); dibujarCalendario();
+    }, 120000);
+  }
+  $('cal-ant').addEventListener('click', function () { moverMes(-1); });
+  $('cal-sig').addEventListener('click', function () { moverMes(1); });
+  $('cal-titulo').addEventListener('click', function () { moverMes(0); var a = new Date(); calMes = a.getMonth(); calAnio = a.getFullYear(); dibujarCalendario(); });
+
+  // ---------- Clima (Open-Meteo, gratis y sin clave) ----------
+  function describir(c, esDia) {
+    if (c === 0) { return [esDia ? '☀️' : '🌙', 'Despejado']; }
+    if (c === 1) { return [esDia ? '🌤' : '🌙', 'Mayormente despejado']; }
+    if (c === 2) { return ['⛅', 'Parcialmente nublado']; }
+    if (c === 3) { return ['☁️', 'Nublado']; }
+    if (c === 45 || c === 48) { return ['🌫', 'Niebla']; }
+    if (c >= 51 && c <= 57) { return ['🌦', 'Llovizna']; }
+    if (c === 61) { return ['🌧', 'Lluvia ligera']; }
+    if (c === 63) { return ['🌧', 'Lluvia']; }
+    if (c >= 65 && c <= 67) { return ['🌧', 'Lluvia fuerte']; }
+    if (c >= 71 && c <= 77) { return ['❄️', 'Nieve']; }
+    if (c >= 80 && c <= 82) { return ['🌦', 'Chubascos']; }
+    if (c === 85 || c === 86) { return ['❄️', 'Chubascos de nieve']; }
+    if (c === 95) { return ['⛈', 'Tormenta']; }
+    if (c === 96 || c === 99) { return ['⛈', 'Tormenta con granizo']; }
+    return ['🌡', '—'];
+  }
+
+  function mostrarClima(datos, viejo) {
+    if (!datos || !datos.current) { return; }
+    var c = datos.current, d = datos.daily;
+    var desc = describir(c.weather_code, c.is_day === 1);
+    texto($('c-icono'), desc[0]);
+    texto($('c-temp'), Math.round(c.temperature_2m) + '°');
+    texto($('c-desc'), desc[1]);
+    texto($('c-extra'), 'Sensación ' + Math.round(c.apparent_temperature) + '° · Humedad ' + c.relative_humidity_2m + '%');
+    var html = '', i;
+    for (i = 0; i < d.time.length && i < 4; i++) {
+      var p = d.time[i].split('-');
+      var f = new Date(+p[0], +p[1] - 1, +p[2]);
+      var nombre = i === 0 ? 'Hoy' : DIAS_C[f.getDay()];
+      var dd = describir(d.weather_code[i], true);
+      html += '<div class="dia"><div class="dia-n">' + nombre + '</div><div class="dia-i">' + dd[0] +
+        '</div><div class="dia-t">' + Math.round(d.temperature_2m_max[i]) + '° <span>' +
+        Math.round(d.temperature_2m_min[i]) + '°</span></div><div class="dia-p">💧 ' +
+        (d.precipitation_probability_max[i] === null ? '–' : d.precipitation_probability_max[i]) + '%</div></div>';
+    }
+    $('c-dias').innerHTML = html;
+    var t = new Date(datos._hora || Date.now());
+    texto($('c-estado'), (viejo ? 'Sin conexión · datos de las ' : 'Actualizado a las ') + dos(t.getHours()) + ':' + dos(t.getMinutes()));
+  }
+
+  function pedirClima() {
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON +
+      '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&timezone=America%2FLa_Paz&forecast_days=4';
+    var x = new XMLHttpRequest();
+    x.open('GET', url, true);
+    x.timeout = 20000;
+    x.onload = function () {
+      if (x.status === 200) {
+        try {
+          var datos = JSON.parse(x.responseText);
+          datos._hora = Date.now();
+          guardar.poner('clima', datos);
+          mostrarClima(datos, false);
+          return;
+        } catch (e) {}
+      }
+      falloClima();
+    };
+    x.onerror = falloClima;
+    x.ontimeout = falloClima;
+    x.send();
+  }
+  function falloClima() {
+    var viejo = guardar.leer('clima', null);
+    if (viejo) { mostrarClima(viejo, true); }
+    else { texto($('c-desc'), 'Sin conexión'); texto($('c-icono'), '📡'); }
+  }
+
+  // ---------- Utilidades compartidas ----------
+  function escapar(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function ymd(f) { return f.getFullYear() + '-' + dos(f.getMonth() + 1) + '-' + dos(f.getDate()); }
+  function deYmd(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function horaDe(ms) { var f = new Date(ms); return dos(f.getHours()) + ':' + dos(f.getMinutes()); }
+  function fechaLarga(f) { return DIAS[f.getDay()] + ' ' + f.getDate() + ' de ' + MESES[f.getMonth()]; }
+  function nombreDia(f, hoy) {
+    var a = new Date(f.getFullYear(), f.getMonth(), f.getDate()).getTime();
+    var b = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+    var dif = Math.round((a - b) / 864e5);
+    if (dif === 0) { return 'Hoy'; }
+    if (dif === 1) { return 'Mañana'; }
+    if (dif === -1) { return 'Ayer'; }
+    return fechaLarga(f);
+  }
+
+  // ---------- Conexión con Google (tu Google Apps Script) ----------
+  // El enlace secreto se guarda SOLO en este iPad; no está escrito en la página pública.
+  var GOOGLE_CADA_MIN = 10, TAREAS_CADA_MIN = 3;
+  // Dirección de tu script (sin la clave no entrega nada, por eso puede ir aquí)
+  var SCRIPT_GOOGLE = 'https://script.google.com/macros/s/AKfycbxlLKQhuMWaqoqLN4GGLojVbf2GjWcNwugHrbyRjqZDwLfwW-X5Kt-S9RKCEPbkPA/exec';
+  var enlace = guardar.leer('enlaceGoogle', '');
+  var jsonpN = 0;
+
+  // Técnica JSONP (etiqueta <script>): funciona bien en el Safari antiguo.
+  function llamarGoogle(params, alTerminar) {
+    if (!enlace) { alTerminar(null); return; }
+    jsonpN++;
+    var nombre = 'respuestaGoogle' + jsonpN, s = document.createElement('script'), listo = false, k;
+    function terminar(r) {
+      if (listo) { return; }
+      listo = true;
+      window[nombre] = function () {};
+      if (s.parentNode) { s.parentNode.removeChild(s); }
+      alTerminar(r);
+    }
+    window[nombre] = function (r) { terminar(r || { error: 'vacio' }); };
+    s.onerror = function () { terminar(null); };
+    setTimeout(function () { terminar(null); }, 30000);
+    var url = enlace + (enlace.indexOf('?') < 0 ? '?' : '&') + 'callback=' + nombre + '&_=' + Date.now();
+    for (k in params) { if (params.hasOwnProperty(k)) { url += '&' + k + '=' + encodeURIComponent(params[k]); } }
+    s.src = url;
+    document.body.appendChild(s);
+  }
+
+  // ---------- Agenda (Google Calendar) ----------
+  var eventos = guardar.leer('eventos', null);
+  var diaElegido = null, agTimer = null, agendaMostrada = [];
+
+  function colorSeguro(c) { return /^#[0-9A-Fa-f]{3,8}$/.test(c || '') ? c : '#4f7cac'; }
+  function eventosDe(dia) {
+    var r = [], i, l = eventos && eventos.lista ? eventos.lista : [];
+    for (i = 0; i < l.length; i++) { if (l[i].d <= dia && l[i].f >= dia) { r.push(l[i]); } }
+    r.sort(function (a, b) {
+      if (a.a !== b.a) { return a.a ? -1 : 1; }
+      return (a.s || 0) - (b.s || 0);
+    });
+    return r;
+  }
+  function filaEvento(ev, dia) {
+    var h = ev.a ? 'Todo el día' : (ev.d < dia ? 'Continúa' : horaDe(ev.s));
+    agendaMostrada.push(ev);
+    return '<div class="ev" data-k="' + (agendaMostrada.length - 1) + '"><i style="background:' + colorSeguro(ev.c) +
+      '"></i><b>' + h + '</b><span>' + escapar(ev.t) + '</span></div>';
+  }
+
+  function dibujarAgenda() {
+    var cont = $('ag-lista'), html = '', ahora = new Date(), i;
+    agendaMostrada = [];
+    if (!enlace) {
+      texto($('ag-titulo'), 'Agenda');
+      cont.innerHTML = '<div class="ag-vacio">Toca <b>⚙ Google</b> y escribe tu clave para ver tu Google Calendar y Google Tasks.</div>';
+      return;
+    }
+    if (!eventos) { cont.innerHTML = '<div class="ag-vacio">Cargando eventos…</div>'; return; }
+    if (diaElegido) {
+      var titulo = nombreDia(deYmd(diaElegido), ahora);
+      texto($('ag-titulo'), titulo.charAt(0).toUpperCase() + titulo.slice(1));
+      if (diaElegido < eventos.desde || diaElegido > eventos.hasta) {
+        html = '<div class="ag-vacio">Este día está fuera del rango que se carga (unos 2 meses adelante).</div>';
+      } else {
+        var l = eventosDe(diaElegido);
+        for (i = 0; i < l.length; i++) { html += filaEvento(l[i], diaElegido); }
+        if (!l.length) { html = '<div class="ag-vacio">Sin eventos este día.</div>'; }
+      }
+    } else {
+      texto($('ag-titulo'), 'Próximos días');
+      var cuenta = 0, d, j;
+      for (d = 0; d < 14 && cuenta < 8; d++) {
+        var fd = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + d);
+        var dia = ymd(fd), lista = eventosDe(dia), bloque = '';
+        for (j = 0; j < lista.length && cuenta < 8; j++) {
+          if (d === 0 && !lista[j].a && lista[j].e < ahora.getTime()) { continue; }  // ya terminó
+          if (d > 0 && lista[j].d < dia) { continue; }                                 // no repetir eventos largos
+          bloque += filaEvento(lista[j], dia);
+          cuenta++;
+        }
+        if (bloque) { html += '<div class="ag-dia">' + nombreDia(fd, ahora) + '</div>' + bloque; }
+      }
+      if (!html) { html = '<div class="ag-vacio">Sin eventos en las próximas 2 semanas.</div>'; }
+    }
+    cont.innerHTML = html;
+  }
+
+  function estadoAgenda(error) {
+    var t = eventos && eventos.hora ? new Date(eventos.hora) : null;
+    var cuando = t ? dos(t.getHours()) + ':' + dos(t.getMinutes()) : '';
+    if (!enlace) { texto($('ag-estado'), ''); return; }
+    if (!error) { texto($('ag-estado'), 'Google Calendar · actualizado a las ' + cuando); return; }
+    texto($('ag-estado'), error + (t ? ' · datos de las ' + cuando : ''));
+  }
+
+  // ---------- Detalle de un evento ----------
+  var detTimer = null;
+  function abrirDetalle(ev) {
+    var cuando;
+    if (ev.a) {
+      cuando = ev.d === ev.f ? 'Todo el día · ' + fechaLarga(deYmd(ev.d))
+        : 'Del ' + fechaLarga(deYmd(ev.d)) + ' al ' + fechaLarga(deYmd(ev.f)) + ' (todo el día)';
+    } else {
+      cuando = fechaLarga(new Date(ev.s)) + ' · ' + horaDe(ev.s) + ' – ' + horaDe(ev.e);
+      if (ev.d !== ev.f) { cuando += ' (' + fechaLarga(new Date(ev.e)) + ')'; }
+    }
+    cuando = cuando.charAt(0).toUpperCase() + cuando.slice(1);
+    $('d-color').style.background = colorSeguro(ev.c);
+    texto($('d-titulo'), ev.t);
+    texto($('d-cuando'), cuando);
+    texto($('d-cal'), ev.n ? 'Calendario: ' + ev.n : '');
+    texto($('d-lugar'), ev.l ? '📍 ' + ev.l : '');
+    texto($('d-desc'), ev.x || '');
+    $('detalle').className = '';
+    clearTimeout(detTimer);
+    detTimer = setTimeout(cerrarDetalle, 60000);
+  }
+  function cerrarDetalle() { $('detalle').className = 'oculto'; clearTimeout(detTimer); }
+  $('ag-lista').addEventListener('click', function (e) {
+    var el = e.target;
+    while (el && el !== this && !el.getAttribute('data-k')) { el = el.parentNode; }
+    if (el && el !== this) { abrirDetalle(agendaMostrada[+el.getAttribute('data-k')]); }
+  });
+  $('detalle').addEventListener('click', function (e) {
+    if (e.target === this || e.target.id === 'd-cerrar') { cerrarDetalle(); }
+  });
+
+  // ---------- Pendientes: Google Tasks (con Google) o solo en el iPad (sin Google) ----------
+  var pendientes = guardar.leer('pendientes', []);     // lista local, si no hay Google conectado
+  var tareas = guardar.leer('tareas', null);           // última lista recibida de Google Tasks
+  var cola = guardar.leer('colaTareas', []);           // cambios hechos en el iPad que faltan enviar
+  var errorTareas = '', enviando = false, idN = Date.now(), i0;
+  for (i0 = 0; i0 < pendientes.length; i0++) { if (!pendientes[i0].id) { pendientes[i0].id = 'L' + (++idN); } }
+
+  function guardarCola() { guardar.poner('colaTareas', cola); }
+
+  // La lista que se ve = lo último de Google + los cambios que aún no llegaron a Google
+  function listaVisible() {
+    if (!enlace) { return pendientes; }
+    var l = [], b = tareas || [], i, j, op;
+    for (i = 0; i < b.length; i++) { l.push({ id: b[i].id, t: b[i].t, h: b[i].h, sub: b[i].sub, v: b[i].v }); }
+    for (j = 0; j < cola.length; j++) {
+      op = cola[j];
+      if (op.op === 'agregar') { if (!op.borrado) { l.unshift({ id: op.tmp, t: op.t, h: op.h }); } }
+      else if (op.op === 'marcar') { for (i = 0; i < l.length; i++) { if (l[i].id === op.id) { l[i].h = op.h; } } }
+      else if (op.op === 'borrar') { for (i = l.length - 1; i >= 0; i--) { if (l[i].id === op.id) { l.splice(i, 1); } } }
+      else if (op.op === 'limpiar') { for (i = l.length - 1; i >= 0; i--) { if (l[i].h) { l.splice(i, 1); } } }
+    }
+    return l;
+  }
+
+  function vence(v) {
+    if (!v) { return ''; }
+    var hoy = ymd(new Date()), f = deYmd(v), txt;
+    if (v < hoy) { txt = 'venció ' + f.getDate() + ' ' + MESES[f.getMonth()].slice(0, 3); return '<em class="tarde">' + txt + '</em>'; }
+    txt = v === hoy ? 'hoy' : nombreDia(f, new Date()).toLowerCase();
+    if (txt.length > 12) { txt = f.getDate() + ' ' + MESES[f.getMonth()].slice(0, 3); }
+    return '<em>' + txt + '</em>';
+  }
+
+  function dibujarPendientes() {
+    var l = listaVisible(), html = '', i;
+    for (i = 0; i < l.length; i++) {
+      html += '<li data-id="' + escapar(l[i].id) + '" class="' + (l[i].h ? 'hecho' : '') + (l[i].sub ? ' sub' : '') + '">' +
+        '<span class="marca">' + (l[i].h ? '✓' : '') + '</span>' +
+        '<span class="pt">' + escapar(l[i].t) + (l[i].h ? '' : vence(l[i].v)) + '</span>' +
+        '<span class="borrar" data-borrar="1">×</span></li>';
+    }
+    if (!l.length) { html = '<li id="pen-vacio">Nada pendiente 🎉</li>'; }
+    $('pen-lista').innerHTML = html;
+    texto($('pen-titulo'), enlace ? 'Google Tasks' : 'Pendientes');
+    var estado = '';
+    if (enlace) {
+      if (errorTareas) { estado = errorTareas; }
+      else if (cola.length) { estado = 'Enviando ' + cola.length + (cola.length === 1 ? ' cambio…' : ' cambios…'); }
+    }
+    texto($('pen-estado'), estado);
+  }
+  function cambio() {
+    if (enlace) { guardarCola(); } else { guardar.poner('pendientes', pendientes); }
+    dibujarPendientes();
+    procesarCola();
+  }
+  function buscarAgregar(tmp) {
+    for (var i = 0; i < cola.length; i++) { if (cola[i].op === 'agregar' && cola[i].tmp === tmp) { return cola[i]; } }
+    return null;
+  }
+
+  function agregarPendiente(t) {
+    if (enlace) { cola.push({ op: 'agregar', t: t, h: false, tmp: 'tmp' + (++idN) }); }
+    else { pendientes.unshift({ id: 'L' + (++idN), t: t, h: false }); }
+    cambio();
+  }
+  function alternarPendiente(id) {
+    var i, l, op;
+    if (!enlace) {
+      for (i = 0; i < pendientes.length; i++) { if (pendientes[i].id === id) { pendientes[i].h = !pendientes[i].h; } }
+    } else if ((op = buscarAgregar(id))) {
+      op.h = !op.h;
+    } else {
+      l = listaVisible();
+      for (i = 0; i < l.length; i++) { if (l[i].id === id) { cola.push({ op: 'marcar', id: id, h: !l[i].h }); } }
+    }
+    cambio();
+  }
+  function borrarPendiente(id) {
+    var i, op;
+    if (!enlace) {
+      for (i = pendientes.length - 1; i >= 0; i--) { if (pendientes[i].id === id) { pendientes.splice(i, 1); } }
+    } else if ((op = buscarAgregar(id))) {
+      if (op.enviando) { op.borrado = true; } else { cola.splice(cola.indexOf(op), 1); }
+    } else {
+      cola.push({ op: 'borrar', id: id });
+    }
+    cambio();
+  }
+  function limpiarHechos() {
+    var i, quedan = [];
+    if (!enlace) {
+      for (i = 0; i < pendientes.length; i++) { if (!pendientes[i].h) { quedan.push(pendientes[i]); } }
+      pendientes = quedan;
+    } else {
+      cola.push({ op: 'limpiar' });
+    }
+    cambio();
+  }
+
+  // Envía a Google los cambios de uno en uno; si no hay internet, esperan guardados en el iPad.
+  function procesarCola() {
+    if (enviando || !enlace || !cola.length) { return; }
+    var op = cola[0], params = { accion: op.op };
+    if (op.op === 'agregar') { params.t = op.t; params.h = op.h ? '1' : '0'; op.hEnviado = op.h; op.enviando = true; }
+    if (op.op === 'marcar') { params.id = op.id; params.h = op.h ? '1' : '0'; }
+    if (op.op === 'borrar') { params.id = op.id; }
+    enviando = true;
+    llamarGoogle(params, function (r) {
+      enviando = false;
+      op.enviando = false;
+      if (!r) { errorTareas = 'Sin conexión · ' + cola.length + ' cambio(s) guardado(s) para enviar'; dibujarPendientes(); return; }
+      if (r.error === 'clave') { errorTareas = 'La clave no coincide'; dibujarPendientes(); return; }
+      var pos = cola.indexOf(op);
+      if (pos >= 0) { cola.splice(pos, 1); }   // si Google lo rechazó también se descarta, para no trabar la lista
+      if (op.op === 'agregar' && r.nuevo) {
+        if (op.borrado) { cola.unshift({ op: 'borrar', id: r.nuevo }); }
+        else if (op.h !== op.hEnviado) { cola.unshift({ op: 'marcar', id: r.nuevo, h: op.h }); }
+      }
+      guardarCola();
+      if (r.tareas) { tareas = r.tareas; guardar.poner('tareas', tareas); }
+      errorTareas = r.error ? 'Google no aceptó un cambio' : '';
+      dibujarPendientes();
+      procesarCola();
+    });
+  }
+
+  function recibirTareas(r) {
+    if (r.tareas) {
+      if (!enviando) { tareas = r.tareas; guardar.poner('tareas', tareas); }
+      errorTareas = '';
+    } else if (r.tareasError) {
+      errorTareas = /Tasks is not defined|no está definido/i.test(r.tareasError)
+        ? 'Falta activar «Google Tasks API» en tu script' : 'Error de Google Tasks';
+    }
+    dibujarPendientes();
+  }
+
+  $('pen-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var campo = $('pen-texto'), t = campo.value.replace(/^\s+|\s+$/g, '');
+    if (!t) { return; }
+    campo.value = '';
+    agregarPendiente(t);
+  });
+  $('pen-lista').addEventListener('click', function (e) {
+    var el = e.target, borrar = el.getAttribute('data-borrar') !== null;
+    while (el && el.tagName !== 'LI') { el = el.parentNode; }
+    if (!el || !el.getAttribute('data-id')) { return; }
+    if (borrar) { borrarPendiente(el.getAttribute('data-id')); }
+    else { alternarPendiente(el.getAttribute('data-id')); }
+  });
+  $('pen-limpiar').addEventListener('click', limpiarHechos);
+
+  // ---------- Pedidos periódicos a Google ----------
+  function pedirTodo() {
+    if (!enlace) { return; }
+    llamarGoogle({ accion: 'todo' }, function (r) {
+      if (!r) { estadoAgenda('Sin conexión'); return; }
+      if (r.error) {
+        estadoAgenda(r.error === 'clave' ? 'La clave no coincide' : 'Error de Google');
+        if (r.error === 'clave') { errorTareas = 'La clave no coincide'; dibujarPendientes(); }
+        return;
+      }
+      eventos = { lista: r.eventos || [], desde: r.desde, hasta: r.hasta, hora: Date.now() };
+      guardar.poner('eventos', eventos);
+      estadoAgenda(null);
+      dibujarCalendario();
+      dibujarAgenda();
+      recibirTareas(r);
+      procesarCola();
+    });
+  }
+  function pedirTareas() {
+    if (!enlace || enviando || cola.length) { return; }
+    llamarGoogle({ accion: 'tareas' }, function (r) { if (r && !r.error) { recibirTareas(r); } });
+  }
+
+  $('ag-google').addEventListener('click', function () {
+    var v = window.prompt('Escribe tu clave de Google (déjala vacía para desconectar):', '');
+    if (v === null) { return; }
+    v = v.replace(/\s+/g, '');
+    if (v && !/^https:/.test(v)) {
+      if (!/^[A-Za-z0-9_-]{4,}$/.test(v)) { window.alert('La clave solo lleva letras y números.'); return; }
+      v = SCRIPT_GOOGLE + '?clave=' + v;
+    }
+    if (v && !/^https:\/\/script\.google\.com\/macros\/s\/\S+\/exec\?clave=\S+$/.test(v)) {
+      window.alert('Ese enlace no parece correcto.');
+      return;
+    }
+    enlace = v;
+    guardar.poner('enlaceGoogle', v);
+    eventos = null; tareas = null; cola = []; errorTareas = '';
+    guardar.poner('eventos', null); guardar.poner('tareas', null); guardarCola();
+    diaElegido = null;
+    dibujarCalendario();
+    dibujarAgenda();
+    dibujarPendientes();
+    estadoAgenda(null);
+    pedirTodo();
+  });
+
+  $('cal').addEventListener('click', function (e) {
+    var el = e.target;
+    while (el && el.tagName !== 'TD') { el = el.parentNode; }
+    if (!el || !el.getAttribute('data-d')) { return; }
+    var d = el.getAttribute('data-d');
+    diaElegido = (d === diaElegido || d === ymd(new Date())) ? null : d;
+    dibujarCalendario();
+    dibujarAgenda();
+    clearTimeout(agTimer);
+    agTimer = setTimeout(function () { diaElegido = null; dibujarCalendario(); dibujarAgenda(); }, 120000);
+  });
+
+  // ---------- Actualizaciones de la página guardada ----------
+  if (window.applicationCache) {
+    window.applicationCache.addEventListener('updateready', function () {
+      try { window.applicationCache.swapCache(); } catch (e) {}
+      window.location.reload();
+    });
+  }
+
+  // ---------- Arranque ----------
+  aplicarModo();
+  dibujarPendientes();
+  tic();
+  estadoAgenda(eventos ? 'Esperando a Google' : null);
+  pedirTodo();
+  setInterval(pedirTodo, GOOGLE_CADA_MIN * 60000);
+  setInterval(pedirTareas, TAREAS_CADA_MIN * 60000);
+  setInterval(procesarCola, 60000);
+  window.addEventListener('online', function () { pedirTodo(); procesarCola(); });
+  var previo = guardar.leer('clima', null);   // muestra lo último guardado mientras llega lo nuevo
+  if (previo) { mostrarClima(previo, true); }
+  pedirClima();
+  setInterval(pedirClima, CLIMA_CADA_MIN * 60000);
+  window.addEventListener('online', pedirClima);
+})();
+</script>
+</body>
+</html>

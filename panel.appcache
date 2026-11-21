@@ -1,0 +1,10 @@
+CACHE MANIFEST
+# Panel de casa - version 4 (2026-11-21)
+# Si cambias index.html, cambia tambien este numero de version para que el iPad descargue lo nuevo.
+
+CACHE:
+index.html
+icon.png
+
+NETWORK:
+*
