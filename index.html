@@ -376,11 +376,25 @@ body.noche li.hecho .marca { color: #000; }
           return;
         } catch (e) {}
       }
-      falloClima();
+      climaPorGoogle();
     };
-    x.onerror = falloClima;
-    x.ontimeout = falloClima;
+    x.onerror = climaPorGoogle;
+    x.ontimeout = climaPorGoogle;
     x.send();
+  }
+  // El iPad antiguo no reconoce el certificado de Open-Meteo: en ese caso, el clima llega a través de tu script de Google.
+  function climaPorGoogle() {
+    if (!enlace) { falloClima(); return; }
+    llamarGoogle({ accion: 'clima' }, function (r) {
+      if (r && r.clima && r.clima.current) {
+        var datos = r.clima;
+        datos._hora = Date.now();
+        guardar.poner('clima', datos);
+        mostrarClima(datos, false);
+      } else {
+        falloClima();
+      }
+    });
   }
   function falloClima() {
     var viejo = guardar.leer('clima', null);
