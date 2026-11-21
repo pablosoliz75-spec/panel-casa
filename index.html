@@ -36,6 +36,9 @@ input { -webkit-user-select: text; user-select: text; }
 #seg { font-size: 34px; font-weight: 300; color: #9a8f80; letter-spacing: 0; margin-left: 6px; }
 #fecha { font-size: 26px; font-weight: 300; margin-top: 4px; }
 #fecha:first-letter { text-transform: uppercase; }
+#turno { font-size: 19px; margin-top: 8px; color: #c8553d; font-weight: 500; }
+#turno:empty { display: none; }
+body.noche #turno { color: #8a4433; }
 
 /* Clima */
 .clima-ahora { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
@@ -153,6 +156,7 @@ body.noche li.hecho .marca { color: #000; }
     <div class="tarjeta reloj">
       <div><span id="hora">--:--</span><span id="seg">--</span></div>
       <div id="fecha">&nbsp;</div>
+      <div id="turno"></div>
     </div>
     <div class="tarjeta estirar">
       <div class="pen-cab">
@@ -473,8 +477,30 @@ body.noche li.hecho .marca { color: #000; }
       '"></i><b>' + h + '</b><span>' + escapar(ev.t) + '</span></div>';
   }
 
+  // Próximo turno: eventos con hora cuyo nombre contiene "turno"
+  var PALABRAS_TURNO = /turno/i;
+  function dibujarTurno() {
+    var el = $('turno'), l = eventos && eventos.lista ? eventos.lista : [], ahora = Date.now(), enCurso = null, prox = null, i, ev;
+    for (i = 0; i < l.length; i++) {
+      ev = l[i];
+      if (ev.a || !PALABRAS_TURNO.test(ev.t || '')) { continue; }
+      if (ev.s <= ahora && ev.e > ahora) { if (!enCurso || ev.e < enCurso.e) { enCurso = ev; } }
+      else if (ev.s > ahora && ev.s - ahora < 8 * 864e5) { if (!prox || ev.s < prox.s) { prox = ev; } }
+    }
+    function nombre(e) { return (e.t.replace(/^\s*turno\s*/i, '') || e.t); }
+    if (enCurso) { texto(el, 'En turno: ' + nombre(enCurso) + ' · termina a las ' + horaDe(enCurso.e)); return; }
+    if (!prox) { texto(el, ''); return; }
+    var min = Math.round((prox.s - ahora) / 60000), falta;
+    if (min < 60) { falta = min + ' min'; }
+    else if (min < 1440) { falta = Math.floor(min / 60) + ' h' + (min % 60 ? ' ' + (min % 60) + ' min' : ''); }
+    else { falta = Math.floor(min / 1440) + ' d ' + Math.floor((min % 1440) / 60) + ' h'; }
+    var cuando = nombreDia(new Date(prox.s), new Date());
+    texto(el, 'Próximo turno: ' + nombre(prox) + ' · ' + cuando.charAt(0).toLowerCase() + cuando.slice(1) + ' ' + horaDe(prox.s) + ' · en ' + falta);
+  }
+
   function dibujarAgenda() {
     var cont = $('ag-lista'), html = '', ahora = new Date(), i;
+    dibujarTurno();
     agendaMostrada = [];
     if (!enlace) {
       texto($('ag-titulo'), 'Agenda');
