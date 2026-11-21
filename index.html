@@ -363,23 +363,26 @@ body.noche li.hecho .marca { color: #000; }
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day' +
       '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
       '&timezone=America%2FLa_Paz&forecast_days=4';
-    var x = new XMLHttpRequest();
+    var x = new XMLHttpRequest(), resuelto = false;
+    function siguiente() { if (!resuelto) { resuelto = true; climaPorGoogle(); } }
+    setTimeout(function () { if (!resuelto) { try { x.abort(); } catch (e) {} siguiente(); } }, 12000);
     x.open('GET', url, true);
     x.timeout = 20000;
     x.onload = function () {
       if (x.status === 200) {
         try {
           var datos = JSON.parse(x.responseText);
+          resuelto = true;
           datos._hora = Date.now();
           guardar.poner('clima', datos);
           mostrarClima(datos, false);
           return;
         } catch (e) {}
       }
-      climaPorGoogle();
+      siguiente();
     };
-    x.onerror = climaPorGoogle;
-    x.ontimeout = climaPorGoogle;
+    x.onerror = siguiente;
+    x.ontimeout = siguiente;
     x.send();
   }
   // El iPad antiguo no reconoce el certificado de Open-Meteo: en ese caso, el clima llega a través de tu script de Google.
@@ -718,6 +721,11 @@ body.noche li.hecho .marca { color: #000; }
       dibujarCalendario();
       dibujarAgenda();
       recibirTareas(r);
+      if (r.clima && r.clima.current) {          // el clima llega junto con tus eventos
+        r.clima._hora = Date.now();
+        guardar.poner('clima', r.clima);
+        mostrarClima(r.clima, false);
+      }
       procesarCola();
     });
   }
